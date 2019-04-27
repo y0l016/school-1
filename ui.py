@@ -1,15 +1,20 @@
+import os
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk as gtk
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GdkPixbuf
 
-class Window(gtk.Window):
+class ImageNotFoundError(Exception):
+    pass
+
+class Window(Gtk.Window):
     def __init__(self):
-        gtk.Window.__init__(self, title="craftit")
+        Gtk.Window.__init__(self, title="craftit")
         self.set_size_request(500, 500)
 
-        self.vbox = gtk.Box(orientation=gtk.Orientation.VERTICAL,
-                            spacing=6)
-        self.add(self.vbox)
+        self.grid = Gtk.Grid()
+        self.add(self.grid)
 
         # the user input after they press enter
         self.entry_text = ""
@@ -19,29 +24,46 @@ class Window(gtk.Window):
         self._create_entry()
 
     def _create_textview(self):
-        scrolledwindow = gtk.ScrolledWindow()
-        scrolledwindow.set_hexpand(True)
-        scrolledwindow.set_vexpand(True)
-        self.vbox.pack_start(scrolledwindow, True, True, 0)
+        self.scrolledwindow = Gtk.ScrolledWindow()
+        self.scrolledwindow.set_hexpand(True)
+        self.scrolledwindow.set_vexpand(True)
+        self.grid.attach(self.scrolledwindow, 0, 0, 100, 90)
 
-        self.textview = gtk.TextView()
+        self.textview = Gtk.TextView()
         self.textview.set_editable(False)
+        self.textview.set_cursor_visible(False)
         self.textbuffer = self.textview.get_buffer()
+        self.scrolledwindow.add(self.textview)
 
     def show_image(self, image_path):
-        pass
+        image_path = os.path.abspath(image_path)
+        if not os.path.isfile(image_path):
+            raise ImageNotFoundError
 
-    def show_text(self, text):
-        pass
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(image_path,
+                                                             50,
+                                                             50,
+                                                             True)
+        except:
+            raise ImageNotFoundError
+        self.textbuffer.insert(self.textbuffer.get_end_iter(), "\n")
+        self.textbuffer.insert_pixbuf(self.textbuffer.get_end_iter(), pixbuf)
+
+    def add_text(self, text):
+        self.textbuffer.insert(self.textbuffer.get_end_iter(),
+                               f"\n{text}")
 
     def _create_entry(self):
-        self.entry = gtk.Entry()
-        self.vbox.pack_start(self.entry, True, True, 0)
+        self.entry = Gtk.Entry()
+        self.grid.attach_next_to(self.entry, self.scrolledwindow,
+                                 Gtk.PositionType.BOTTOM, 100, 10)
         self.entry.connect("activate", self._do_enter_entry)
 
     def _do_enter_entry(self, entry):
         self.entry_text = self.entry.get_text()
         self.entry.set_text("")
+        self._test_function()
 
     def get_input(self):
         return self.entry_text
