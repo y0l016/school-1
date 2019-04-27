@@ -57,7 +57,15 @@ class Window(Gtk.Window):
     def _create_entry(self):
         self.entry = Gtk.Entry()
         self.grid.attach_next_to(self.entry, self.scrolledwindow,
-                                 Gtk.PositionType.BOTTOM, 100, 10)
+                                 Gtk.PositionType.BOTTOM, 95, 10)
+
+        prompt_label = Gtk.Label()
+        prompt_label.set_text(">")
+        prompt_label.set_selectable(False)
+        prompt_label.set_justify(Gtk.Justification.RIGHT)
+        self.grid.attach_next_to(prompt_label, self.entry,
+                                 Gtk.PositionType.LEFT, 5, 10)
+
         self.entry.connect("activate", self._do_enter_entry)
 
     def _do_enter_entry(self, entry):
