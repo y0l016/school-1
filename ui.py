@@ -26,6 +26,12 @@ class Window(Gtk.Window):
         self._create_textview()
         self._create_entry()
 
+    def main(self, func_do_enter):
+        self.func_do_enter = func_do_enter
+        self.connect("destroy", Gtk.main_quit)
+        self.show_all()
+        Gtk.main()
+        
     def _modify_color(self, widget, color_field):
         _ = util.hex2rgb(config.get_color_field(self.conf, color_field))
 
@@ -97,8 +103,8 @@ class Window(Gtk.Window):
     def _do_enter_entry(self, entry):
         self.entry_text = self.entry.get_text()
         self.entry.set_text("")
-        # TODO: find a way to call an outside function cleanly
-        self.add_text(self.entry_text)
+
+        self.func_do_enter()
 
     def get_input(self):
         return self.entry_text
