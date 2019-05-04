@@ -51,6 +51,12 @@ class Window(Gtk.Window):
         self.textview = Gtk.TextView()
         self.textview.set_editable(False)
         self.textview.set_cursor_visible(False)
+        padding = self.conf.get("padding", 5)
+        self.textview.set_bottom_margin(padding)
+        self.textview.set_top_margin(padding)
+        self.textview.set_right_margin(padding)
+        self.textview.set_left_margin(padding)
+
         self._modify_color(self.textview, "window_bg")
         self._modify_color(self.textview, "window_fg")
 
