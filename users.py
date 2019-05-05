@@ -39,3 +39,31 @@ def create_world(data_dir, user, world):
     except FileExistsError:
         return False
     return True
+
+def delete_world(data_dir, user, world):
+    """
+    delete a world. opposite of create_world()
+    returns False if the world is not present
+    """
+    result_path = os.path.join(data_dir, user, world)
+
+    if not os.path.isdir(result_path):
+        return False
+    shutil.rmtree(result_path)
+    return True
+
+def rename_world(data_dir, user, old_world, new_world):
+    """
+    "rename" a world. it moves the old_world to the new_world
+    and does nothing else.
+    returns False if the old_world is not present or if the
+    new world is present
+    """
+    old_path = os.path.join(data_world, user, old_world)
+    new_path = os.path.join(data_world, user, new_world)
+
+    if not os.path.isdir(old_path) or os.path.isdir(new_world):
+        return False
+
+    shutil.move(old_path, new_path)
+    return True
