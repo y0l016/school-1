@@ -8,7 +8,8 @@ import sys
 
 import config
 
-def __hex2rgb(hex):
+# utilities
+def _hex2rgb(hex):
     """ convert hex to rgb list """
     if hex is None:
         return None
@@ -22,7 +23,10 @@ def __hex2rgb(hex):
 
     rgb = [int(r, 16), int(g, 16), int(b, 16)]
 
-    return [float(i)/255 for i in rgb]
+    return [i/255.0 for i in rgb]
+
+class ImageNotFoundError(Exception):
+    pass
 
 class Window(Gtk.Window):
     def __init__(self, config_path=config.CONFIG):
@@ -48,7 +52,7 @@ class Window(Gtk.Window):
         Gtk.main()
         
     def _modify_color(self, widget, color_field):
-        _ = __hex2rgb(config.get_color_field(self.conf, color_field))
+        _ = _hex2rgb(config.get_color_field(self.conf, color_field))
 
         if "fg" in color_field:
             widget.override_color(Gtk.StateType.NORMAL,
@@ -85,7 +89,7 @@ class Window(Gtk.Window):
                 raise ImageNotFoundError
         except:
             print(f"error: cannot load image {image_path}", file=sys.stderr)
-
+            raise ImageNotFoundError
         try:
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(image_path,
                                                              50,
@@ -93,6 +97,7 @@ class Window(Gtk.Window):
                                                              True)
         except:
             print(f"error: cannot load image {image_path}", file=sys.stderr)
+            raise ImageNotFoundError
 
         self.add_text("")
         self.textbuffer.insert_pixbuf(self.textbuffer.get_end_iter(), pixbuf)

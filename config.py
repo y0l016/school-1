@@ -22,15 +22,16 @@ else:
 CONFIG = os.path.join(CONFIG, "craftitgui")
 
 def get_config(config_path):
-   config_path = os.path.abspath(config_path)
+    config_path = os.path.abspath(config_path)
 
-   if not os.path.isfile(config_path):
-       print("warning: using default config", file=sys.stderr)
-       return DEFAULTS
-
-   data = json.load(config_path)
-
-   return data
+    if os.path.isfile(config_path):
+        with open(config_path, "r") as data:
+            data = json.load(data)
+        DEFAULTS.update(data)
+    else:
+        print(f"warning: using default config", file=sys.stderr)
+       
+    return DEFAULTS
 
 def get_color_field(config, field):
     return config.get("colors").get(field)
