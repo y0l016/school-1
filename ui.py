@@ -7,7 +7,22 @@ import os
 import sys
 
 import config
-import util
+
+def __hex2rgb(hex):
+    """ convert hex to rgb list """
+    if hex is None:
+        return None
+
+    if '#' in hex:
+        hex = hex[1:]
+
+    r = hex[0:2]
+    g = hex[2:4]
+    b = hex[4:]
+
+    rgb = [int(r, 16), int(g, 16), int(b, 16)]
+
+    return [float(i)/255 for i in rgb]
 
 class Window(Gtk.Window):
     def __init__(self, config_path=config.CONFIG):
@@ -33,7 +48,7 @@ class Window(Gtk.Window):
         Gtk.main()
         
     def _modify_color(self, widget, color_field):
-        _ = util.hex2rgb(config.get_color_field(self.conf, color_field))
+        _ = __hex2rgb(config.get_color_field(self.conf, color_field))
 
         if "fg" in color_field:
             widget.override_color(Gtk.StateType.NORMAL,
