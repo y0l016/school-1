@@ -30,7 +30,7 @@ def get_config(config_path):
         DEFAULTS.update(data)
     else:
         print(f"warning: using default config", file=sys.stderr)
-       
+
     return DEFAULTS
 
 def get_color_field(config, field):

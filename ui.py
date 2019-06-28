@@ -1,12 +1,15 @@
 import gi
+import os
+import sys
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GdkPixbuf
-import os
-import sys
 
 import config
+
+# TODO: fix image scaling
 
 # utilities
 def _hex2rgb(hex):
@@ -14,16 +17,14 @@ def _hex2rgb(hex):
     if hex is None:
         return None
 
-    if '#' in hex:
+    if '#' == hex[0]:
         hex = hex[1:]
 
     r = hex[0:2]
     g = hex[2:4]
     b = hex[4:]
 
-    rgb = [int(r, 16), int(g, 16), int(b, 16)]
-
-    return [i/255.0 for i in rgb]
+    return [int(i, 16)/255.0 for i in (r, g, b)]
 
 class ImageNotFoundError(Exception):
     pass
@@ -50,7 +51,7 @@ class Window(Gtk.Window):
         self.connect("destroy", Gtk.main_quit)
         self.show_all()
         Gtk.main()
-        
+
     def _modify_color(self, widget, color_field):
         _ = _hex2rgb(config.get_color_field(self.conf, color_field))
 
@@ -60,7 +61,7 @@ class Window(Gtk.Window):
         else:
             widget.override_background_color(Gtk.StateType.NORMAL,
                                              Gdk.RGBA(_[0], _[1], _[2]))
-        
+
     def _create_textview(self):
         self.scrolledwindow = Gtk.ScrolledWindow()
         self.scrolledwindow.set_hexpand(True)
@@ -91,10 +92,8 @@ class Window(Gtk.Window):
             print(f"error: cannot load image {image_path}", file=sys.stderr)
             raise ImageNotFoundError
         try:
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(image_path,
-                                                             50,
-                                                             50,
-                                                             True)
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(image_path, 50,
+                                                             50, True)
         except:
             print(f"error: cannot load image {image_path}", file=sys.stderr)
             raise ImageNotFoundError
@@ -113,7 +112,7 @@ class Window(Gtk.Window):
         prompt_label.set_justify(Gtk.Justification.RIGHT)
         self._modify_color(prompt_label, "window_bg")
         self._modify_color(prompt_label, "window_fg")
-        
+
         self.grid.attach_next_to(prompt_label, self.scrolledwindow,
                                  Gtk.PositionType.BOTTOM, 2, 10)
 
