@@ -1,0 +1,17 @@
+* TODO:
+** achievements
+** difficulty (button)
+easy/hard
+** worlds
+** inventory
+** items + images
+** main
+** fix image scaling
+** starting page
+- prompt for user name
+- provide buttons for each world
+- have a create/delete button on the bottom
+** time unit
+2 game days to survive
+* aim - 500 LOC (without comments)
+* plot
