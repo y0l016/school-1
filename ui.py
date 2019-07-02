@@ -1,3 +1,12 @@
+"""
+this file handles all the ui elements.
+provides the Window class which can be used to spawn
+a Gtk window.
+the Window class has several helper functions that the
+frontend can use to display text, image and get what
+the user has last entered.
+"""
+
 import gi
 import os
 import sys
@@ -13,7 +22,9 @@ import config
 
 # utilities
 def _hex2rgb(hex):
-    """ convert hex to rgb list """
+    """
+    convert hex to rgb list
+    """
     if hex is None:
         return None
 
@@ -27,10 +38,21 @@ def _hex2rgb(hex):
     return [int(i, 16)/255.0 for i in (r, g, b)]
 
 class ImageNotFoundError(Exception):
+    """
+    the given image cannot be found. raised in the Window class
+    """
     pass
 
 class Window(Gtk.Window):
     def __init__(self, config_path=config.CONFIG):
+        """
+        doesn't need any mandatory argument.
+        optional arguemnt:
+        config_path -> path to config file.
+        falls back to AppData/craftitgui in nt
+                      XDG_CONFIG_HOME/craftitgui in posix
+                      falls back to ~/.config in case if env var is not defined
+        """
         Gtk.Window.__init__(self, title="craftit")
         self.set_size_request(500, 500)
 
@@ -47,12 +69,22 @@ class Window(Gtk.Window):
         self._create_entry()
 
     def main(self, func_do_enter):
+        """
+        starts running the main loop.
+        arguments:
+        func_do_enter -> function that should be run after the user
+        presses enter.
+        """
         self.func_do_enter = func_do_enter
         self.connect("destroy", Gtk.main_quit)
         self.show_all()
         Gtk.main()
 
     def _modify_color(self, widget, color_field):
+        """
+        modify given widget's color to color_field.
+        if fg is in the color_field, it changes the fg color.
+        """
         _ = _hex2rgb(config.get_color_field(self.conf, color_field))
 
         if "fg" in color_field:
@@ -63,6 +95,12 @@ class Window(Gtk.Window):
                                              Gdk.RGBA(_[0], _[1], _[2]))
 
     def _create_textview(self):
+        """
+        creates a textview which makes displaying both image and text
+        possible. creates textview in a scrolled window so the user
+        can scroll back.
+        sets the window color's f/bg to window_f/bg in config
+        """
         self.scrolledwindow = Gtk.ScrolledWindow()
         self.scrolledwindow.set_hexpand(True)
         self.scrolledwindow.set_vexpand(True)
@@ -84,10 +122,16 @@ class Window(Gtk.Window):
         self.scrolledwindow.add(self.textview)
 
     def show_image(self, image_path):
+        """
+        display an image in the text view.
+        arguments:
+        image_path -> relative/abs path to the image
+        raises:
+        raises ImageNotFoundError if the file does not exist or
+        if GdkPixBuf cannot create an object from the file path
+        """
         try:
             image_path = os.path.abspath(image_path)
-            if not os.path.isfile(image_path):
-                raise ImageNotFoundError
         except:
             print(f"error: cannot load image {image_path}", file=sys.stderr)
             raise ImageNotFoundError
@@ -102,10 +146,22 @@ class Window(Gtk.Window):
         self.textbuffer.insert_pixbuf(self.textbuffer.get_end_iter(), pixbuf)
 
     def add_text(self, text):
+        # TODO: consider making text a tuple? *text
+        """
+        add text to the textview.
+        argument:
+        text -> text to display
+        """
         self.textbuffer.insert(self.textbuffer.get_end_iter(),
                                f"\n{text}")
 
     def _create_entry(self):
+        """
+        create an entry and place it below the scrolledwindow.
+        also makes a prompt window left to the entry and set its
+        prompt to `prompt` value in config. falls back to `>` if
+        it is not defined.
+        """
         prompt_label = Gtk.Label()
         prompt_label.set_text(self.conf.get("prompt", ">"))
         prompt_label.set_selectable(False)
@@ -126,10 +182,17 @@ class Window(Gtk.Window):
         self._modify_color(self.entry, "input_fg")
 
     def _do_enter_entry(self, entry):
+        """
+        do the things that needs to be done after a user presses enter.
+        calls func_do_enter given in main among other things
+        """
         self.entry_text = self.entry.get_text()
         self.entry.set_text("")
 
         self.func_do_enter()
 
     def get_input(self):
+        """
+        return what the user has last entered.
+        """
         return self.entry_text

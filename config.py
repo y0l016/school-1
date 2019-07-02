@@ -1,3 +1,10 @@
+"""
+handle the configuration file.
+default config path, CONFIG is defined here.
+CONFIG in nt -> AppData/craftitgui
+       in posix -> XDG_CACHE_HOME/craftitgui
+                   uses ~/.config if the env var is not defined.
+"""
 import json
 import os
 import sys
@@ -22,6 +29,9 @@ else:
 CONFIG = os.path.join(CONFIG, "craftitgui")
 
 def get_config(config_path):
+    """
+    parse the config located at config_path and return it.
+    """
     config_path = os.path.abspath(config_path)
 
     if os.path.isfile(config_path):
@@ -34,4 +44,10 @@ def get_config(config_path):
     return DEFAULTS
 
 def get_color_field(config, field):
+    """
+    return a particular color field>
+    arguments:
+    config -> configuration dictionary
+    field -> the color field to be returned.
+    """
     return config.get("colors").get(field)

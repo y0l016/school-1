@@ -1,3 +1,9 @@
+"""
+a file with a User class.
+if you want to know more about it, read the doc string
+of the User class
+"""
+
 import os
 import shutil
 
