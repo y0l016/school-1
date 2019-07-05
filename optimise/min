@@ -1,4 +1,0 @@
-#!/usr/bin/python3
-with open("results") as f:
-	s = [float(i) for i in f.read().strip().split("\n")]
-print(min(s))
