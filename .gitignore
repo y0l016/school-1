@@ -1,4 +1,1 @@
-test.*
-*.png
-*.jpg
-__pycache__/
+*/__pycache__/

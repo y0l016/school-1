@@ -1,0 +1,5 @@
+#!/bin/ksh
+rm results
+for i in `seq 1 100`; {
+    python3 line_calc.py > /dev/null; cat res; echo
+} >> results
