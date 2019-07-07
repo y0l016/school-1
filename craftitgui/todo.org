@@ -1,11 +1,9 @@
 * TODO:
-** achievements
 ** difficulty (button)
 easy/hard
 ** worlds
 ** inventory
 ** items + images
-** main
 ** fix image scaling
 ** starting page
 - prompt for user name
