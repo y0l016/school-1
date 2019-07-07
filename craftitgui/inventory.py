@@ -31,7 +31,7 @@ class Item:
         """
         return self.recipe
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Tool:
     durability: int
     recipe:     dict
