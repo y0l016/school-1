@@ -21,7 +21,7 @@ import config
 # TODO: fix image scaling
 
 # utilities
-def _hex2rgb(hex):
+def _hex2rgb(hex: str) -> [float]:
     """
     convert hex to rgb list
     """
@@ -50,8 +50,8 @@ class Window(Gtk.Window):
         optional arguemnt:
         config_path -> path to config file.
         falls back to AppData/craftitgui in nt
-                      XDG_CONFIG_HOME/craftitgui in posix
-                      falls back to ~/.config in case if env var is not defined
+            XDG_CONFIG_HOME/craftitgui in posix
+            falls back to ~/.config in case if env var is not defined
         """
         Gtk.Window.__init__(self, title="craftit")
         self.set_size_request(500, 500)
