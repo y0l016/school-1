@@ -7,8 +7,6 @@ of the User class
 import os
 import shutil
 
-from dataclasses import dataclass
-
 import inventory
 
 if os.name == "nt":
@@ -20,22 +18,20 @@ else:
         __DATA_DIR__ = os.getenv("HOME") + "/.cache/craftit"
 
 __DATA_DIR__ = os.path.join(__DATA_DIR__, "users")
-__WORLD_DIR__ = os.path.join(__DATA_DIR__, "worlds")
 
 if not os.path.isdir(__DATA_DIR__):
     if os.path.isfile(__DATA_DIR__):
         shutil.rmtree(__DATA_DIR__)
     os.makedirs(__DATA_DIR__)
 
-if not os.path.isdir(__WORLD_DIR__):
-    os.makedirs(__WORLD_DIR__)
 
-@dataclass
 class User:
     """
     a user object
     """
-    name: str
+    def __init__(self, name):
+        self.name = name
+
 
     def create_user(self):
         """
@@ -55,6 +51,10 @@ class User:
         except FileExistsError:
             return False
 
+        self.__world_dir__ = os.path.join(result_path, "worlds")
+        if not os.path.isdir(self.__world_dir__):
+            os.makedirs(self.__world_dir__)
+
         return True
 
     def _switch_world(self, world_name):
@@ -65,7 +65,7 @@ class User:
         True -> if changed successfully
         False -> if world is not present
         """
-        path = os.path.join(__WORLD_DIR__, world_name)
+        path = os.path.join(self.__world_dir__, world_name)
         if not os.path.isdir(path):
             return False
         self.current_world = world_name
@@ -79,7 +79,7 @@ class User:
         False -> if the world is already present
         True -> otherwise
         """
-        path = os.path.join(__WORLD_DIR__, world_name)
+        path = os.path.join(self.__world_dir__, world_name)
 
         if os.path.isdir(path):
             return False
@@ -97,32 +97,18 @@ class User:
         False -> if world_name is not present
         True -> otherwise
         """
-        path = os.path.join(__WORLD_DIR__, world_name)
+        path = os.path.join(self.__world_dir__, world_name)
 
         if not os.path.isdir(path):
             return False
         shutil.rmtree(path)
         return True
 
-    def rename_world(self, old_name, new_name):
+    def return_worlds(self):
         """
-        move old_name world to new_name world. changes self.current_world
-        to new_name if old_name is the current world
-
-        returns:
-        False -> if new_name already exists
-        True -> otherwise
+        return all the worlds user has created in a list
         """
-        old_path = os.path.join(__WORLD_DIR__, old_name)
-        new_path = os.path.join(__WORLD_DIR__, new_name)
-
-        if os.path.isdir(new_path):
-            return False
-
-        shutil.move(old_path, new_path)
-        if self.current_world == old_name:
-            self._switch_world(new_name)
-        return True
+        return os.listdir(self.__world_dir__)
 
 def is_user_present(user_name: str) -> bool:
     return os.path.isdir(__DATA_DIR__, user_name)
