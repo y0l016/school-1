@@ -11,7 +11,7 @@
   our project in the future.
 
   This entire project is made using free and/or open-source software such as Emacs,
-  CPython, Vim, etc. and licensed under _BSD 2 Clause "Simplified" License_.
+  CPython, Vim, etc. and licensed under BSD 2 Clause "Simplified" License.
 * Client-server model
   The client-server model is made with simplicity in mind akin to the Unix
   philosophy^{ [3]}. The main motto of the message's data structure is to be
@@ -84,7 +84,7 @@
   On forth, =addr= will refer to a tuple (host, port) where host is the IP
   address of the client.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 import json
 import os
 import socket
@@ -100,7 +100,7 @@ from select import select
   - =BANNED= is a list of all =addr=
   - =OP= is a list of all =addr= that can do OP actions
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 SERV_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 NICKS       = {}
 SOCKETS     = []
@@ -122,14 +122,13 @@ OP          = []
    from the following data structures so we don't repeatedly try to send or
    receive data from a broken socket.
 
-   Data structures:
      - =NICKS=
      - =SOCKETS=
 
    To remove the broken socket from =NICKS=, we use the =getpeername= method
    of a socket that returns an =addr=.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def send_only(data, send_to):
     try:
         send_to.send(data)
@@ -150,7 +149,7 @@ def send_only(data, send_to):
    =send_all= sends the message to every socket except the server's and the
    sender's.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def send_all(data, sent_from):
     pass_scks = [SERV_SOCKET, sent_from]
     for sck in SOCKETS:
@@ -171,7 +170,7 @@ def send_all(data, sent_from):
    function called =gen_msg= that takes an arguement called =msg= (which should
    be self-explanatory).
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def gen_msg(msg):
     msg = { "nick": "server", "msg": msg }
     return bytes(json.dumps(msg), "utf-8")
@@ -187,14 +186,14 @@ def gen_msg(msg):
    =handle_cmd= takes the sender's socket and data as arguement where data is
    a dictionary and NOT a message.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def handle_cmd(sck, data):
 #+END_SRC
 
    We get the command by simple splitting and slicing, we get the sender's
    =addr= to check if they are OP and their nickname.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
     cmd = data.get("msg")[1:]
     addr = sck.getpeername()
     nick = data.get("nick")
@@ -206,7 +205,7 @@ def handle_cmd(sck, data):
    If the command is =ban=, then we need to check if the =addr= is OP. If not, then
    we warn the user.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
     if cmd.startswith("ban"):
         if addr not in OP:
             msg = gen_msg("you dont have permission to use this command")
@@ -217,7 +216,7 @@ def handle_cmd(sck, data):
 
    If the command is =disconnect=, remove the =addr= from =SOCKETS= and =NICKS=.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
     elif cmd.startswith("disconnect"):
         SOCKETS.remove(addr)
         del NICKS[nick]
@@ -227,7 +226,7 @@ def handle_cmd(sck, data):
    If the command is =nick=, we change their old nickname to their new one.
    To achieve this, we delete their entry in =NICKS= and replace it with a new one.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
     elif cmd.startswith("nick"):
         new_nick = cmd.split()[1:]
         del NICKS[nick]
@@ -266,7 +265,7 @@ def handle_cmd(sck, data):
     The ban function takes a list of all the client's nickname that are to be banned. We then set the number of clients to
     a variable called =nc= and create another variable =msg= to store the message temporarily.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def ban(clients):
     msg = "banned "
     nc = len(clients) - 1
@@ -274,21 +273,21 @@ def ban(clients):
 
     We loop through each client in =clients= and get their =addr=.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
     for n, i in enumerate(clients):
         addr = NICKS.get(i)
 #+END_SRC
 
     We check if they are in =BANNED= list already and skip the iteration if they are.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
         if addr in BANNED:
             continue
 #+END_SRC
 
    We append them to the =BANNED= list and remove them from =SOCKETS= list and the =NICKS= dictionary.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
         BANNED.append(addr)
         SOCKETS.remove(addr)
         del NICKS[i]
@@ -296,7 +295,7 @@ def ban(clients):
 
    We then add the nickname to =msg=.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
         msg += i
         if n != nc:
             msg += " "
@@ -304,7 +303,7 @@ def ban(clients):
 
    At last we return the message.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
     return gen_msg(msg)
 #+END_SRC
 *** list
@@ -313,7 +312,7 @@ def ban(clients):
     we loop through =NICKS= and add each user to a variable, generate a message
     and return to sender.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def list_users(send_to):
     msg = "active users\n"
     nc  = len(NICKS) - 1
@@ -334,7 +333,7 @@ def list_users(send_to):
    hardware) hostname and =gethostbyname= returns the IP address pointing
    to the hostname. We can use this to get the IP address of the server.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def init():
     host = socket.gethostbyname(socket.gethostname())
     saddr = (host, 9600)
@@ -363,7 +362,7 @@ IP2 port2
    file path as an arguement and returns a list of =addr=. Then using that function,
    we set =OP= and =BANNED=.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
     def read_file(path):
         res = []
         if os.path.isfile(path):
@@ -383,7 +382,7 @@ IP2 port2
    before. To do these, we write a function =on_kill= that performs the
    aforementioned actions.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def on_kill():
     SERV_SOCKET.close()
     def write_file(path, lst):
@@ -406,7 +405,7 @@ def on_kill():
    The fourth arguement is timeout and we set it to zero because waiting for
    a client is pointless.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 def main():
     readable, _, _ = select(SOCKETS, [], [], 0)
     for sck in readable:
@@ -415,7 +414,7 @@ def main():
    If the socket that is to be read is =SERV_SOCKET=, then it implies that a new
    client is connected. We =accept= the socket and get its =addr=.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
         if sck == SERV_SOCKET:
             sockfd, addr = SERV_SOCKET.accept()
 #+END_SRC
@@ -423,7 +422,7 @@ def main():
    If it's a banned client, we ignore it. Send a nice message to banned client
    about their state.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
             if addr in BANNED:
                 send_only(gen_msg("you are banned"), sockfd)
 #+END_SRC
@@ -434,7 +433,7 @@ def main():
    Just after the request to join, we /expect/ the client to send its nickname
    as a raw string (the data sent would be "john").
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
             else:
                 nick = sockfd.recv(4096)
                 send_all(f"{nick} connected")
@@ -444,7 +443,7 @@ def main():
 
    If its any other socket, then it means they sent data. So we try to read them.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
         else:
             try:
                 data = sck.recv(4096)
@@ -454,7 +453,7 @@ def main():
    it needs to start with a =/=. If it is a command, we let =handle_cmd= do its
    work.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
                 data_dict = json.loads(data)
                 if data_dict.get("msg").startswith("/"):
                     data = handle_cmd(sck, data_dict)
@@ -463,7 +462,7 @@ def main():
    If =handle_cmd= returns False, then we skip the iteration because we need not
    send any message to everyone. Otherwise, we simply send the data to everyone.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
                     if not data:
                         continue
                 send_all(data, sck)
@@ -474,7 +473,7 @@ def main():
    decided to disconnect. So we remove the broken socket
    from the data structures. And then send a disconnect message.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
                except ConnectionResetError:
                    addr = sck.getpeername()
                    nick = ""
@@ -493,7 +492,7 @@ def main():
    If an administrator wishes to kill the server, they can do by pressing =^C=.
    When they do that, =KeyboardInterrupt= is raised.
 
-#+BEGIN_SRC python :tangle server-lit.py
+#+BEGIN_SRC python :tangle server.py
 if __name__ == "__main__":
     init()
     while 1:
@@ -678,9 +677,12 @@ class Ui:
 #+END_SRC
 
    We get the current cursor position and the current character in the
-   buffer.
+   buffer. We will also set a variable named =can_send= that tells the
+   main loop if the data has to be sent to the server. We will set it
+   to =False= at first but change it when the user presses enter.
 
 #+BEGIN_SRC python :tangle client/ui.py
+        self.can_send = False
         cury, curx = self.winput.getyx()
         ch = self.winput.getch()
         if ch != curses.ERR:
@@ -699,6 +701,8 @@ class Ui:
                 self.winput.clear()
                 self.winput.addstr(self.prompt)
                 self.winput.refresh()
+                inp = ""
+                self.can_send = True
 #+END_SRC
 
    If the user pressed backspace, we want to delete the current character.
@@ -748,12 +752,23 @@ from dataclasses import dataclass
 
    =User= class will have three variables - =nick=, =socket= and =server_addr=
 
+   It will also have a method - =connect=. =connect= will be used to connect
+   to a server that corresponds to the =server_addr=.
+
 #+BEGIN_SRC python :tangle client/client.py
 @dataclass
 class User:
     nick: str
     server_addr: (str, int)
     socket: socket.socket
+#+END_SRC
+
+   To connect to a server, we use the =connect= method of a socket object.
+
+#+BEGIN_SRC python :tangle client/client.py
+    def connect(self):
+        self.socket.connect(self.server_addr)
+        self.socket.send(self.nick)
 #+END_SRC
 
    Out of all the server-side commands, =nick= and =disconnect= needs some
@@ -771,11 +786,23 @@ import json
 def change_nick(data):
     data_dict = json.loads(data)
     USER.nick = data_dict.get("nick")
+    UI.nick   = USER.nick
     return data
 #+END_SRC
 
    To implement the =disconnect=, we need to =kill= =UI= and close =USER='s
    =socket=.
+
+#+BEGIN_SRC python :tangle client/commands.py
+def connect(data):
+    USER.connect()
+    dat = json.dumps({"nick": "client", "msg": "connected!"})
+    UI.__print__(dat)
+    return False
+#+END_SRC
+
+   We will implement the =connect= command which connects to the given
+   server. When the port is not defined, we will let it default to 9600.
 
 #+BEGIN_SRC python :tangle client/commands.py
 def disconnect(data):
@@ -816,10 +843,108 @@ def switch_case(data):
 
 #+BEGIN_SRC python :tangle client/commands.py
 CMD = { "nick": change_nick,      "ping": ping,
-        "disconnect": disconnect, "switch-case": switch_case }
+        "disconnect": disconnect, "switch-case": switch_case
+        "connect": connect}
 #+END_SRC
 ** Main loop
+   We will get the initial server's =addr= as the first command-line arguement.
+   Since we are initliazing the client, we put these in the =init= function.
 
+   Using the =sys= module, one can get access to the command-line arguements
+   via the =argv= variable. It is a list of all command-line arguments and its
+   zeroth element is the path to the file that is currently running. If the client
+   is not started with any arguements, we will simply quit with a message.
+
+#+BEGIN_SRC python :tangle client/client.py
+def init():
+    import sys
+    if len(sys.argv) == 1:
+        print("server ip not provided!")
+        exit(1)
+#+END_SRC
+
+   The server =addr= will provided in the format - =ip:port=. If =port= is not defined,
+   then we will default to 9600.
+
+   We will also create a socket object.
+
+#+BEGIN_SRC python :tangle client/client.py
+    ad = sys.argv[1].split(":")
+    if len(ad) == 1:
+        port = 9600
+    else:
+        port = int(ad[1])
+    saddr = (ad[0], port)
+    sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#+END_SRC
+
+    We will now create instances of =Ui= and =User= classes and make it global.
+    =USER= environmental variable will be used as the default nickname for the client.
+    To get an environmental variable, we will use the =getenv= function in the =os=
+    module.
+
+#+BEGIN_SRC python :tangle client/client.py
+    global USER, UI
+    import os
+    import ui
+    nick = os.getenv("USER")
+    USER = User(nick, saddr, sck)
+    UI   = ui.Ui(sck, nick)
+#+END_SRC
+
+    Then we will connect to the server.
+
+#+BEGIN_SRC python :tangle client/client.py
+    USER.connect()
+#+END_SRC
+
+   To get the actual client working, we will define a =main= function that creates
+   a thread for the message window.
+
+#+BEGIN_SRC python :tangle client/client.py
+def main():
+    msg_thread = threading.Thread(target=UI.do_msg)
+    msg_thread.start()
+#+END_SRC
+
+   Then we will start the input window which will run in the foreground.
+
+#+BEGIN_SRC python :tangle client/client.py
+    inp = ""
+    while 1:
+        inp = UI.do_input(inp)
+        if inp == 2:
+            continue
+#+END_SRC
+
+   If =UI.can_send= is =True=, then we can send data to the server. But before
+   that we will have to check if it's a command and evaluate it.
+
+   Here, =inp[1:]= will be the command's name. We check if it is in =CMD=, then
+   run the corresponding the command. Each command requires a message object,
+   so we give data as an arguement.
+
+   Then we send the data to the server if =data= is not =False=.
+
+#+BEGIN_SRC python :tangle client/client.py
+        if UI.can_send:
+            data = UI.__mkdata__(inp)
+            if inp.startswith("/"):
+                if inp[1:] in CMD:
+                    data = CMD[inp[1:]](data)
+            if data:
+                USER.socket.send(data)
+#+END_SRC
+
+   If the special variable =__name__= is =__main__=, then we will run the client.
+
+#+BEGIN_SRC python :tangle client/client.py
+if __name__ == "__main__":
+    init()
+    from commands import *
+    import threading
+    main()
+#+END_SRC
 * References
 1. http://www.literateprogramming.com
 2. https://en.wikipedia.org/wiki/Literate_programming
