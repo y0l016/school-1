@@ -794,10 +794,10 @@ def change_nick(data):
    =socket=.
 
 #+BEGIN_SRC python :tangle client/commands.py
-def connect(data):
-    USER.connect()
-    dat = json.dumps({"nick": "client", "msg": "connected!"})
-    UI.__print__(dat)
+def disconnect(data):
+    UI.kill()
+    USER.socket.send(data)
+    USER.socket.close()
     return False
 #+END_SRC
 
@@ -805,10 +805,17 @@ def connect(data):
    server. When the port is not defined, we will let it default to 9600.
 
 #+BEGIN_SRC python :tangle client/commands.py
-def disconnect(data):
-    UI.kill()
-    USER.socket.send(data)
-    USER.socket.close()
+def connect(data):
+    dat = json.dumps({"nick": "client", "msg": "connected!"})
+    data_dict = json.dumps(data)
+    addr = data_dict.get("msg").split()[1]
+    addr = addr.split(":")
+    if len(addr) == 1:
+        port = 9600
+    else:
+        port = addr[1]
+    USER.serv_addr = (addr[0], port)
+    UI.__print__(dat)
     return False
 #+END_SRC
 
