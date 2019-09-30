@@ -1,5 +1,5 @@
 # TODO:
-# handle ^c in client
+# tui photo
 * Introduction
   This entire project is written using the programming paradigm called literate
   programming^{ [1][2]} and this document can be "compiled" (in LP speak, it's called
@@ -12,8 +12,8 @@
 
   This entire project is made using free and/or open-source software such as Emacs,
   CPython, Vim, etc. and licensed under BSD 2 Clause "Simplified" License.
-* Client-server model
-  The client-server model is made with simplicity in mind akin to the Unix
+* Protocol
+  The protocol is made with simplicity in mind akin to the Unix
   philosophy^{ [3]}. The main motto of the message's data structure is to be
   simple yet elegant, usable by everything. One of the widely adapted data
   structures by many programming languages out of the box is JSON,
@@ -158,7 +158,7 @@ def send_all(data, sent_from):
             send_only(data, sck)
 #+END_SRC
 ** Commands
-   Commands are an important part that our server-client model offers. It is
+   Commands are an important part that our protocol offers. It is
    powerful and easily expandable. Implementing new commands should be a
    matter of second. As mentioned before, there are some commands that are
    exclusive to a certain group of users. When one tries to use a command that
@@ -244,7 +244,7 @@ def handle_cmd(sck, data):
     Whenever a community is created, there's always trolls and other pesky
     people who ruin everyone's experience. The classic method of handling
     these people is simply barring them from using the service. In our
-    server-client model, we call it =ban= and it alters the following data
+    protocol, we call it =ban= and it alters the following data
     structures.
 
     - =NICKS=
@@ -436,7 +436,8 @@ def main():
 #+BEGIN_SRC python :tangle server.py
             else:
                 nick = sockfd.recv(4096)
-                send_all(f"{nick} connected")
+                send_all(gen_msg(f"{nick.decode()} connected"),
+                         SERV_SOCKET)
                 SOCKETS.append(sockfd)
                 NICKS[nick] = addr
 #+END_SRC
@@ -481,7 +482,8 @@ def main():
                        if v == addr:
                            nick = k
                    if nick:
-                       send_all(f"{nick} disconnected")
+                       send_all(gen_msg(f"{nick.decode()} disconnected"),
+                                SERV_SOCKET)
                        del NICKS[nick]
                    SOCKETS.remove(sck)
 #+END_SRC
@@ -629,13 +631,19 @@ class Ui:
         curses.cbreak()
 #+END_SRC
 
+   We will draw the prompt after starting the UI.
+
+#+BEGIN_SRC python :tangle client/ui.py
+        self.winput.addstr(self.prompt)
+#+END_SRC
+
    We will define a method called =__print__= that takes a message,
    in JSON, and prints it to the message window.
 
 #+BEGIN_SRC python :tangle client/ui.py
     def __print__(self, data):
         data = json.loads(data)
-        self.wmsg.addstr(fmt.format(**data))
+        self.wmsg.addstr(self.fmt.format(**data))
         self.wmsg.addstr("\n")
         self.wmsg.refresh()
 #+END_SRC
@@ -665,9 +673,9 @@ class Ui:
 #+END_SRC
 
    =do_input= is a function that is intended to run in the main thread
-   and it takes input from the user and returns it as a string. It returns
-   1 when the user presses =^C= so in the main loop, the exit is handled
-   properly. It returns 2 when the main loop should not send any data
+   and it takes input from the user and returns it as a string.
+
+   It returns 1 when the main loop should not send any data
    to the server.
 
    It has =inp= as an arguement which acts as a buffer for the message.
@@ -695,7 +703,7 @@ class Ui:
 #+BEGIN_SRC python :tangle client/ui.py
             if ch == ord("\n"):
                 if not inp:
-                    return 2
+                    return 1
                 data = self.__mkdata__(inp)
                 self.__print__(data)
                 self.winput.clear()
@@ -737,7 +745,7 @@ class Ui:
 #+END_SRC
 ** Commands
    Before implementing client-side commands, we need a nice way to represent
-   user's details. To do this, we will create a dataclass^{ [5]} which
+   user's details. To do this, we will create a dataclass^{ [5][6]} which
    simplifies the class declaration a lot.
 
    We will save this in the main file - =client.py=
@@ -768,7 +776,7 @@ class User:
 #+BEGIN_SRC python :tangle client/client.py
     def connect(self):
         self.socket.connect(self.server_addr)
-        self.socket.send(self.nick)
+        self.socket.send(bytes(self.nick, "utf-8"))
 #+END_SRC
 
    Out of all the server-side commands, =nick= and =disconnect= needs some
@@ -795,9 +803,9 @@ def change_nick(data):
 
 #+BEGIN_SRC python :tangle client/commands.py
 def disconnect(data):
-    UI.kill()
     USER.socket.send(data)
     USER.socket.close()
+    UI.kill()
     return False
 #+END_SRC
 
@@ -807,7 +815,7 @@ def disconnect(data):
 #+BEGIN_SRC python :tangle client/commands.py
 def connect(data):
     dat = json.dumps({"nick": "client", "msg": "connected!"})
-    data_dict = json.dumps(data)
+    data_dict = json.loads(data)
     addr = data_dict.get("msg").split()[1]
     addr = addr.split(":")
     if len(addr) == 1:
@@ -816,6 +824,28 @@ def connect(data):
         port = addr[1]
     USER.serv_addr = (addr[0], port)
     UI.__print__(dat)
+    return False
+#+END_SRC
+
+   To add some more customizability to the UI, we will add two commands -
+   =prompt= and =fmt= which can change =UI='s =prompt= and =fmt= variable
+   respectively.
+
+   To implement these commands, we will split the =msg= field of =data=
+   and change the corresponding value. Since we do not want to send any
+   of this to the server, we will return =False=.
+
+#+BEGIN_SRC python :tangle client/commands.py
+def prompt(data):
+    msg = json.loads(data).get("msg")
+    new_prompt = msg[len("/prompt "):]
+    UI.prompt = new_prompt
+    return False
+
+def fmt(data):
+    msg = json.loads(data).get("msg")
+    new_fmt = msg[len("/fmt "):]
+    UI.fmt = new_fmt
     return False
 #+END_SRC
 
@@ -850,8 +880,8 @@ def switch_case(data):
 
 #+BEGIN_SRC python :tangle client/commands.py
 CMD = { "nick": change_nick,      "ping": ping,
-        "disconnect": disconnect, "switch-case": switch_case
-        "connect": connect}
+        "disconnect": disconnect, "switch-case": switch_case,
+        "connect": connect, "fmt": fmt, "prompt": prompt}
 #+END_SRC
 ** Main loop
    We will get the initial server's =addr= as the first command-line arguement.
@@ -920,7 +950,8 @@ def main():
     inp = ""
     while 1:
         inp = UI.do_input(inp)
-        if inp == 2:
+        if inp == 1:
+            inp = ""
             continue
 #+END_SRC
 
@@ -956,5 +987,6 @@ if __name__ == "__main__":
 1. http://www.literateprogramming.com
 2. https://en.wikipedia.org/wiki/Literate_programming
 3. https://en.wikipedia.org/wiki/Unix_philosophy
-4. curses
-5. dataclass
+4. https://en.wikipedia.org/wiki/Curses_(programming_library)
+5. https://docs.python.org/3/library/dataclasses.html
+6. https://www.youtube.com/watch?v=T-TwcmT6Rcw
