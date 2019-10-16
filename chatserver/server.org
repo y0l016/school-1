@@ -33,7 +33,7 @@
   On forth, message would refer to the message's data structure.
 
   In case the server has to send some message to users, the nick is set to
-  =server= for obvious reasons.
+  =server= 
 
   This data will be sent to every client online except the sender. The data
   itself is not altered by the server but it might choose to ignore to send
